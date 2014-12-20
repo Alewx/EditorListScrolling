@@ -41,3 +41,13 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+
+# Build Folders (you can keep bin if you'd like, to store dlls and pdbs)
+[Bb]in/
+[Oo]bj/
+
+# files that should be ignores as they cause problems with different versions of IDE
+*.sln
+*.suo
+*.suo
