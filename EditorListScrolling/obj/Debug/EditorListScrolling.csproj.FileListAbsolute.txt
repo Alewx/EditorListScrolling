@@ -1,8 +1,0 @@
-D:\Games\KSP Source Projects\EditorListScrolling\EditorListScrolling\bin\Debug\EditorListScrolling.dll
-D:\Games\KSP Source Projects\EditorListScrolling\EditorListScrolling\bin\Debug\EditorListScrolling.pdb
-D:\Games\KSP Source Projects\EditorListScrolling\EditorListScrolling\bin\Debug\Assembly-CSharp-firstpass.dll
-D:\Games\KSP Source Projects\EditorListScrolling\EditorListScrolling\bin\Debug\Assembly-CSharp.dll
-D:\Games\KSP Source Projects\EditorListScrolling\EditorListScrolling\bin\Debug\UnityEngine.dll
-D:\Games\KSP Source Projects\EditorListScrolling\EditorListScrolling\obj\Debug\EditorListScrolling.csprojResolveAssemblyReference.cache
-D:\Games\KSP Source Projects\EditorListScrolling\EditorListScrolling\obj\Debug\EditorListScrolling.dll
-D:\Games\KSP Source Projects\EditorListScrolling\EditorListScrolling\obj\Debug\EditorListScrolling.pdb
