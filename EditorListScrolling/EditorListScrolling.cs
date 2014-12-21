@@ -12,6 +12,8 @@ namespace EditorListScrolling
 		private static float _mouseWheelSensitivity = 0.1f;
 		private static float _summedMouseScroll = 0;
 		private static int _currentCategoryIndex = 0;
+
+		private EditorListScrollingConfiguration config;
 		private static Rect _editorPartListScrollRect = new Rect(Constants.baseEditorPartListXOffset,
 			Constants.editorPartListTopOffset,
 			Constants.baseEditorPartListWidth - Constants.baseEditorPartListXOffset,
@@ -38,49 +40,17 @@ namespace EditorListScrolling
 
 
 		/// <summary>
-		/// loads the config and then puts them into the dll
-		/// </summary>
-		private static void LoadConfig()
-		{
-			KSP.IO.PluginConfiguration config = KSP.IO.PluginConfiguration.CreateForType<EditorListScrollingConfiguration>();
-			config.load();
-			_invertMouseWheel = config.GetValue("invertMouseWheel", _invertMouseWheel);
-			_mouseWheelSensitivity = config.GetValue("mouseWheelSensitivity", _mouseWheelSensitivity);
-			if (_mouseWheelSensitivity < 0.1f)
-			{
-				_mouseWheelSensitivity = 0.1f;
-			}
-			if (_mouseWheelSensitivity > 1)
-			{
-				_mouseWheelSensitivity = 1;
-			}
-		}
-
-
-		/// <summary>
-		/// sets the values from the dll and saves it in the config
-		/// </summary>
-		private static void SaveConfig()
-		{
-			KSP.IO.PluginConfiguration config = KSP.IO.PluginConfiguration.CreateForType<EditorListScrollingConfiguration>();
-			config.SetValue("invertMouseWheel", _invertMouseWheel);
-			config.SetValue("mouseWheelSensitivity", _mouseWheelSensitivity.ToString());
-			config.save();
-		}
-
-
-		/// <summary>
 		/// initial mehtod that is called once the plugin is loaded
 		/// </summary>
 		public void Awake()
 		{
 			if (System.IO.File.Exists(string.Concat(Constants.runtimeDirectory, Constants.xmlFilePath, Constants.configFileName)))
 			{
-				LoadConfig();
+				config = EditorListScrollingConfigurationManager.LoadConfig();
 			}
 			else
 			{
-				SaveConfig();
+				EditorListScrollingConfigurationManager.SaveConfig(config);
 			}
 		}
 
@@ -131,10 +101,21 @@ namespace EditorListScrolling
 		/// </summary>
 		public void Update()
 		{
+			EditorListScrollingLockingManager.instance.startLockingUpdate();
+			manageEditorListScrolling();
+			EditorListScrollingLockingManager.instance.endlockingUpdate();
+		}
+
+
+		/// <summary>
+		/// manages everything of the mod
+		/// </summary>
+		private void manageEditorListScrolling()
+		{
 			_currentMousePos = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y);
 			updateEditorMode();
-			managePartListMouseScroll(_editorPartListScrollRect.Contains(_currentMousePos), _editorCategoryScrollRect.Contains(_currentMousePos));
-			Debug.Log(string.Format("{0} -|- {1} -|- {2} -|- {3} -|- {4}", _currentMousePos, _activeEditorMode, _invertMouseWheel, _editorPartListScrollRect, Constants.editorCategories[_currentCategoryIndex]));
+			updatePartList(_editorPartListScrollRect.Contains(_currentMousePos), _editorCategoryScrollRect.Contains(_currentMousePos));
+			//Debug.Log(string.Format("{0} -|- {1} -|- {2} -|- {3} -|- {4}", _currentMousePos, _activeEditorMode, _invertMouseWheel, _editorPartListScrollRect, Constants.editorCategories[_currentCategoryIndex]));
 		}
 
 
@@ -142,11 +123,12 @@ namespace EditorListScrolling
 		/// analysis the mousescrolling and sets the pages
 		/// </summary>
 		/// <param name="enabled"></param>
-		private static void managePartListMouseScroll(bool PartListScrollingEnabled, bool categoryScrollingEnabled)
+		private static void updatePartList(bool PartListScrollingEnabled, bool categoryScrollingEnabled)
 		{
 			if (PartListScrollingEnabled || categoryScrollingEnabled)
 			{
-				InputLockManager.SetControlLock(ControlTypes.CAMERACONTROLS, Constants.lockKey);
+				EditorListScrollingLockingManager.instance.updateLocking();
+
 				_summedMouseScroll += Input.GetAxis("Mouse ScrollWheel");
 				if (_invertMouseWheel ? _summedMouseScroll < (1 * (-_mouseWheelSensitivity)) : _summedMouseScroll > (1 * _mouseWheelSensitivity))
 				{
@@ -175,7 +157,6 @@ namespace EditorListScrolling
 			}
 			else
 			{
-				InputLockManager.RemoveControlLock(Constants.lockKey);
 				_summedMouseScroll = 0;
 			}
 		}

@@ -6,6 +6,8 @@ namespace EditorListScrolling
 	public static class Constants
 	{
 
+		public static readonly float defaultMouseWheelSensitivity = 0.1f;
+		public static readonly bool defaultInvertMouseWheel = false;
 		public static readonly int baseEditorCategoryXOffset = 0;
 		public static readonly int baseEditorPartListXOffset = 34;
 		public static readonly int baseEditorPartListWidth = 263;
@@ -18,7 +20,6 @@ namespace EditorListScrolling
 		public static readonly string runtimeDirectory = Assembly.GetExecutingAssembly().Location.Replace(new FileInfo(Assembly.GetExecutingAssembly().Location).Name, "");
 		public static readonly string xmlFilePath = "/PluginData/EditorListScrolling/";
 		public static readonly string configFileName = "config.xml";
-
 		public static readonly PartCategories[] editorCategories = { PartCategories.Pods, PartCategories.Propulsion, PartCategories.Engine, PartCategories.Control, PartCategories.Structural, PartCategories.Aero, PartCategories.Utility, PartCategories.Science };
 
 	}

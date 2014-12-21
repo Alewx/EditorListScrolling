@@ -31,10 +31,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Assembly-CSharp">
+    <Reference Include="Assembly-CSharp, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\AssemblyReferences\0.9\Assembly-CSharp.dll</HintPath>
     </Reference>
-    <Reference Include="Assembly-CSharp-firstpass">
+    <Reference Include="Assembly-CSharp-firstpass, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\AssemblyReferences\0.9\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
     <Reference Include="System" />
@@ -43,7 +45,8 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="UnityEngine">
+    <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\AssemblyReferences\0.9\UnityEngine.dll</HintPath>
     </Reference>
   </ItemGroup>
@@ -51,6 +54,8 @@
     <Compile Include="Constants.cs" />
     <Compile Include="EditorListScrolling.cs" />
     <Compile Include="EditorListScrollingConfiguration.cs" />
+    <Compile Include="EditorListScrollingConfigurationManager.cs" />
+    <Compile Include="EditorListScrollingLockingManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
