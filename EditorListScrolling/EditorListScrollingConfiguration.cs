@@ -1,7 +1,7 @@
 ﻿
 namespace EditorListScrolling
 {
-	public class EditorListScrollingConfiguration
+	class EditorListScrollingConfiguration
 	{
 		public bool invertMouseWheel;
 		public float mouseWheelSensitivity;

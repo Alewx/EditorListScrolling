@@ -55,7 +55,6 @@
     <Compile Include="EditorListScrolling.cs" />
     <Compile Include="EditorListScrollingConfiguration.cs" />
     <Compile Include="EditorListScrollingConfigurationManager.cs" />
-    <Compile Include="EditorListScrollingLockingManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
