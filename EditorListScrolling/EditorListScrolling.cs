@@ -82,17 +82,64 @@ namespace EditorListScrolling
 		/// <param name="step"></param>
 		private static void updateCategory(int step)
 		{
-			int newIndex = _currentCategoryIndex + step;
-			if (newIndex < 0)
+			PartCategorizer.Category filterByFunction = PartCategorizer.Instance.filters.Find(f => f.button.categoryName == "Filter by Function");
+			if (filterByFunction.button.activeButton.State == RUIToggleButtonTyped.ButtonState.TRUE)
 			{
-				newIndex = Constants.editorCategories.Length - 1;
+				int newIndex = _currentCategoryIndex + step;
+				if (newIndex < 0)
+				{
+					newIndex = Constants.editorCategories.Length - 1;
+				}
+				if (newIndex > Constants.editorCategories.Length - 1)
+				{
+					newIndex = 0;
+				}
+				_currentCategoryIndex = newIndex;
+
+				switch (Constants.editorCategories[newIndex])
+				{
+					case PartCategories.Pods:
+						{
+							PartCategorizer.SetPanel_FunctionPods();
+						}
+						break;
+					case PartCategories.FuelTank:
+						{
+							PartCategorizer.SetPanel_FunctionFuelTank();
+						}
+						break;
+					case PartCategories.Engine:
+						{
+							PartCategorizer.SetPanel_FunctionEngine();
+						}
+						break;
+					case PartCategories.Control:
+						{
+							PartCategorizer.SetPanel_FunctionControl();
+						}
+						break;
+					case PartCategories.Structural:
+						{
+							PartCategorizer.SetPanel_FunctionStructural();
+						}
+						break;
+					case PartCategories.Aero:
+						{
+							PartCategorizer.SetPanel_FunctionAero();
+						}
+						break;
+					case PartCategories.Utility:
+						{
+							PartCategorizer.SetPanel_FunctionUtility();
+						}
+						break;
+					case PartCategories.Science:
+						{
+							PartCategorizer.SetPanel_FunctionScience();
+						}
+						break;
+				}
 			}
-			if (newIndex > Constants.editorCategories.Length - 1)
-			{
-				newIndex = 0;
-			}
-			_currentCategoryIndex = newIndex;
-			EditorPartList.Instance.SelectTab(Constants.editorCategories[_currentCategoryIndex]);
 		}
 
 
@@ -198,6 +245,7 @@ namespace EditorListScrolling
 					{
 						case PanelToScroll.Filter:
 							{
+								//needs new stuff
 							}
 							break;
 						case PanelToScroll.Category:
