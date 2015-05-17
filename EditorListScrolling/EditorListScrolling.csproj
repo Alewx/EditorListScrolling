@@ -33,11 +33,11 @@
   <ItemGroup>
     <Reference Include="Assembly-CSharp, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\AssemblyReferences\0.9\Assembly-CSharp.dll</HintPath>
+      <HintPath>..\..\AssemblyReferences\1.0\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp-firstpass, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\AssemblyReferences\0.9\Assembly-CSharp-firstpass.dll</HintPath>
+      <HintPath>..\..\AssemblyReferences\1.0\Assembly-CSharp-firstpass.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -47,17 +47,24 @@
     <Reference Include="System.Xml" />
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\AssemblyReferences\0.9\UnityEngine.dll</HintPath>
+      <HintPath>..\..\AssemblyReferences\1.0\UnityEngine.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Constants.cs" />
+    <Compile Include="Debugger.cs" />
     <Compile Include="EditorListScrolling.cs" />
     <Compile Include="EditorListScrollingConfiguration.cs" />
     <Compile Include="EditorListScrollingConfigurationManager.cs" />
+    <Compile Include="EnumCollection.cs" />
+    <Compile Include="Helpers.cs" />
+    <Compile Include="OnScreenDebug.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>copy "$(TargetPath)" "$(SolutionDir)GameData\$(SolutionName)\" /y</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">

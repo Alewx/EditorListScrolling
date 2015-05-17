@@ -5,13 +5,16 @@ namespace EditorListScrolling
 	[KSPAddon(KSPAddon.Startup.EditorAny, false)]
 	public class EditorListScrolling : MonoBehaviour
 	{
-		private static PanelToScroll currentScrollPanel;
+		public static EditorListScrolling Instance { get; private set; }
+		private static EnumCollection.PanelToScroll _currentScrollPanel;
 		private static Vector2 _currentMousePos;
-		private static bool _invertMouseWheel = false;
-		private static float _mouseWheelSensitivity = 0.1f;
+		private static bool _invertMouseWheel = Constants.defaultInvertMouseWheel;
+		private static float _mouseWheelSensitivity = Constants.defaultMouseWheelSensitivity;
 		private static float _summedMouseScroll = 0;
 		private static int _currentCategoryIndex = 0;
-		private EditorListScrollingConfiguration config;
+		private static EditorListScrollingConfiguration _config;
+		private static EditorLogic.EditorModes _editorMode;
+		private static PartCategorizer.Category _filterByFunction;
 
 		private static Rect[] _editorScrollRectSimple =
 		{
@@ -41,14 +44,6 @@ namespace EditorListScrolling
 				Screen.height - Constants.editorTopOffset - Constants.editorBottomOffset)
 		};
 
-		private enum PanelToScroll
-		{
-			None,
-			Filter,
-			Category,
-			Parts
-		}
-
 		public string VERSION
 		{
 			get { return Constants.version; }
@@ -59,143 +54,33 @@ namespace EditorListScrolling
 			get { return Constants.modname; }
 		}
 
+		public EnumCollection.PanelToScroll activeScrollPanel
+		{
+			get { return _currentScrollPanel; }
+		}
+
 
 		/// <summary>
 		/// initial mehtod that is called once the plugin is loaded
 		/// </summary>
 		private void Awake()
 		{
+			Instance = this;
 			if (System.IO.File.Exists(string.Concat(Constants.runtimeDirectory, Constants.xmlFilePath, Constants.configFileName)))
 			{
-				config = EditorListScrollingConfigurationManager.LoadConfig();
+				_config = EditorListScrollingConfigurationManager.LoadConfig();
 			}
 			else
 			{
-				EditorListScrollingConfigurationManager.SaveConfig(config);
+				if (_config == null)
+				{
+					_config = new EditorListScrollingConfiguration();
+					_config.invertMouseWheel = Constants.defaultInvertMouseWheel;
+					_config.mouseWheelSensitivity = Constants.defaultMouseWheelSensitivity;
+				}
+				EditorListScrollingConfigurationManager.SaveConfig(_config);
 			}
-		}
-
-
-		/// <summary>
-		/// changes the sekected Category (currently broken and selecting tabs is somehow currently not possible?)
-		/// </summary>
-		/// <param name="step"></param>
-		private static void updateCategory(int step)
-		{
-			PartCategorizer.Category filterByFunction = PartCategorizer.Instance.filters.Find(f => f.button.categoryName == "Filter by Function");
-			if (filterByFunction.button.activeButton.State == RUIToggleButtonTyped.ButtonState.TRUE)
-			{
-				int newIndex = _currentCategoryIndex + step;
-				if (newIndex < 0)
-				{
-					newIndex = Constants.editorCategories.Length - 1;
-				}
-				if (newIndex > Constants.editorCategories.Length - 1)
-				{
-					newIndex = 0;
-				}
-				_currentCategoryIndex = newIndex;
-
-				switch (Constants.editorCategories[newIndex])
-				{
-					case PartCategories.Pods:
-						{
-							PartCategorizer.SetPanel_FunctionPods();
-						}
-						break;
-					case PartCategories.FuelTank:
-						{
-							PartCategorizer.SetPanel_FunctionFuelTank();
-						}
-						break;
-					case PartCategories.Engine:
-						{
-							PartCategorizer.SetPanel_FunctionEngine();
-						}
-						break;
-					case PartCategories.Control:
-						{
-							PartCategorizer.SetPanel_FunctionControl();
-						}
-						break;
-					case PartCategories.Structural:
-						{
-							PartCategorizer.SetPanel_FunctionStructural();
-						}
-						break;
-					case PartCategories.Aero:
-						{
-							PartCategorizer.SetPanel_FunctionAero();
-						}
-						break;
-					case PartCategories.Utility:
-						{
-							PartCategorizer.SetPanel_FunctionUtility();
-						}
-						break;
-					case PartCategories.Science:
-						{
-							PartCategorizer.SetPanel_FunctionScience();
-						}
-						break;
-				}
-			}
-		}
-
-
-		/// <summary>
-		/// checks for a change in the editormode and changes the partlist rect properly
-		/// </summary>
-		private static void updateEditorScrolling()
-		{
-			if (EditorLogic.fetch.editorScreen == EditorScreen.Parts)
-			{
-				if (EditorPanels.Instance.IsMouseOver())
-				{
-					_currentMousePos = Mouse.screenPos;
-					switch (EditorLogic.Mode)
-					{
-						case EditorLogic.EditorModes.SIMPLE:
-							{
-								if (_editorScrollRectSimple[0].Contains(_currentMousePos))
-								{
-									currentScrollPanel = PanelToScroll.Category;
-								}
-								else if (_editorScrollRectSimple[1].Contains(_currentMousePos))
-								{
-									currentScrollPanel = PanelToScroll.Parts;
-								}
-								else
-								{
-									currentScrollPanel = PanelToScroll.None;
-								}
-								updatePartList();
-							}
-							break;
-						case EditorLogic.EditorModes.ADVANCED:
-							{
-								if (_editorScrollRectAdvanced[0].Contains(_currentMousePos))
-								{
-									currentScrollPanel = PanelToScroll.Filter;
-								}
-								if (_editorScrollRectAdvanced[1].Contains(_currentMousePos))
-								{
-									currentScrollPanel = PanelToScroll.Category;
-								}
-								else if (_editorScrollRectAdvanced[2].Contains(_currentMousePos))
-								{
-									currentScrollPanel = PanelToScroll.Parts;
-								}
-								else
-								{
-									currentScrollPanel = PanelToScroll.None;
-								}
-								updatePartList();
-							}
-							break;
-					}
-				}
-			}
+			_filterByFunction = PartCategorizer.Instance.filters.Find(filter => filter.button.categoryName == "Filter by Function");
 		}
 
 
@@ -204,7 +89,121 @@ namespace EditorListScrolling
 		/// </summary>
 		private void Update()
 		{
-			updateEditorScrolling();
+			_editorMode = EditorLogic.Mode;
+			ManageEditorScrollingSection();
+			setEditorMode();
+		}
+
+
+		/// <summary>
+		/// sets the Editor to the Mode that was used at the Frame begin.
+		/// </summary>
+		private void setEditorMode()
+		{
+			switch (_editorMode)
+			{
+				case EditorLogic.EditorModes.ADVANCED:
+					{
+						PartCategorizer.Instance.SetAdvancedMode();
+					}
+					break;
+				case EditorLogic.EditorModes.SIMPLE:
+					{
+						PartCategorizer.Instance.SetSimpleMode();
+					}
+					break;
+			}
+		}
+
+
+		/// <summary>
+		/// checks for a change in the editormode and changes the partlist rect properly
+		/// </summary>
+		private static void ManageEditorScrollingSection()
+		{
+			if (EditorLogic.fetch.editorScreen == EditorScreen.Parts)
+			{
+				if (EditorPanels.Instance.IsMouseOver())
+				{
+					_currentMousePos = Mouse.screenPos;
+					var mouseDirection = getScrollDirection();
+					if (mouseDirection != EnumCollection.ScrollDirection.NONE)
+					{
+						switch (EditorLogic.Mode)
+						{
+							case EditorLogic.EditorModes.SIMPLE:
+								{
+									if (_editorScrollRectSimple[0].Contains(_currentMousePos))
+									{
+										_currentScrollPanel = EnumCollection.PanelToScroll.CATEGORY;
+										updateCategories(mouseDirection); //broken
+									}
+									else if (_editorScrollRectSimple[1].Contains(_currentMousePos))
+									{
+										_currentScrollPanel = EnumCollection.PanelToScroll.PARTS;
+										updatePartList(mouseDirection);
+									}
+									else
+									{
+										_currentScrollPanel = EnumCollection.PanelToScroll.NONE;
+									}
+								}
+								break;
+							case EditorLogic.EditorModes.ADVANCED:
+								{
+									if (_editorScrollRectAdvanced[0].Contains(_currentMousePos))
+									{
+										_currentScrollPanel = EnumCollection.PanelToScroll.FILTER;
+										UpdateFilters(mouseDirection); //broken
+									}
+									else if (_editorScrollRectAdvanced[1].Contains(_currentMousePos))
+									{
+										_currentScrollPanel = EnumCollection.PanelToScroll.CATEGORY;
+										updateCategories(mouseDirection); //broken
+									}
+									else if (_editorScrollRectAdvanced[2].Contains(_currentMousePos))
+									{
+										_currentScrollPanel = EnumCollection.PanelToScroll.PARTS;
+										updatePartList(mouseDirection);
+									}
+									else
+									{
+										_currentScrollPanel = EnumCollection.PanelToScroll.NONE;
+									}
+								}
+								break;
+						}
+					}
+				}
+				else
+				{
+					if (_currentScrollPanel != EnumCollection.PanelToScroll.NONE)
+					{
+						_currentScrollPanel = EnumCollection.PanelToScroll.NONE;
+					}
+				}
+			}
+		}
+
+
+		/// <summary>
+		/// provides the direction that is beeing scrolled based on an enum
+		/// </summary>
+		/// <returns></returns>
+		private static EnumCollection.ScrollDirection getScrollDirection()
+		{
+			_summedMouseScroll += Input.GetAxis("Mouse ScrollWheel");
+			if (_invertMouseWheel ? _summedMouseScroll < (1 * (-_mouseWheelSensitivity)) : _summedMouseScroll > (1 * _mouseWheelSensitivity))
+			{
+				_summedMouseScroll = 0;
+				return EnumCollection.ScrollDirection.NEGATIVE;
+			}
+			if (_invertMouseWheel ? _summedMouseScroll > (1 * _mouseWheelSensitivity) : _summedMouseScroll < (1 * (-_mouseWheelSensitivity)))
+			{
+				_summedMouseScroll = 0;
+				return EnumCollection.ScrollDirection.POSTITIVE;
+			}
+			return EnumCollection.ScrollDirection.NONE;
 		}
 
 
@@ -212,60 +211,143 @@ namespace EditorListScrolling
 		/// analysis the mousescrolling and sets the pages
 		/// </summary>
 		/// <param name="enabled"></param>
-		private static void updatePartList()
+		private static void updatePartList(EnumCollection.ScrollDirection direction)
 		{
-			if (currentScrollPanel != PanelToScroll.None)
+			Debugger.log("updatePartList");
+			if (_currentScrollPanel != EnumCollection.PanelToScroll.NONE)
 			{
-				_summedMouseScroll += Input.GetAxis("Mouse ScrollWheel");
-				if (_invertMouseWheel ? _summedMouseScroll < (1 * (-_mouseWheelSensitivity)) : _summedMouseScroll > (1 * _mouseWheelSensitivity))
+				switch (direction)
 				{
-					switch (currentScrollPanel)
-					{
-						case PanelToScroll.Filter:
-							{
-								//needs new stuff
-							}
-							break;
-						case PanelToScroll.Category:
-							{
-								updateCategory(-1);
-							}
-							break;
-						case PanelToScroll.Parts:
-							{
-								EditorPartList.Instance.PrevPage();
-							}
-							break;
-					}
-					_summedMouseScroll = 0;
+					case EnumCollection.ScrollDirection.POSTITIVE:
+						{
+							EditorPartList.Instance.NextPage();
+						}
+						break;
+					case EnumCollection.ScrollDirection.NEGATIVE:
+						{
+							EditorPartList.Instance.PrevPage();
+						}
+						break;
 				}
-				if (_invertMouseWheel ? _summedMouseScroll > (1 * _mouseWheelSensitivity) : _summedMouseScroll < (1 * (-_mouseWheelSensitivity)))
-				{
-					switch (currentScrollPanel)
-					{
-						case PanelToScroll.Filter:
-							{
-								//needs new stuff
-							}
-							break;
-						case PanelToScroll.Category:
-							{
-								updateCategory(1);
-							}
-							break;
-						case PanelToScroll.Parts:
-							{
-								EditorPartList.Instance.NextPage();
-							}
-							break;
-					}
-					_summedMouseScroll = 0;
-				}
-			}
-			else
-			{
-				_summedMouseScroll = 0;
 			}
 		}
+
+
+		/// <summary>
+		/// changes the filter based on scroll direction
+		/// </summary>
+		private static void UpdateFilters(EnumCollection.ScrollDirection direction)
+		{
+			Debugger.log("UpdateFilters");
+			if (_currentScrollPanel != EnumCollection.PanelToScroll.NONE)
+			{
+				switch (direction)
+				{
+					case EnumCollection.ScrollDirection.POSTITIVE:
+						{
+							foreach (PartCategorizer.Category filter in PartCategorizer.Instance.filters)
+							{
+								Debugger.log("postivie Filter = " + filter.button.categoryName);
+							}
+						}
+						break;
+					case EnumCollection.ScrollDirection.NEGATIVE:
+						{
+							foreach (PartCategorizer.Category filter in PartCategorizer.Instance.filters)
+							{
+								Debugger.log("negative Filter = " + filter.button.categoryName);
+							}
+						}
+						break;
+				}
+			}
+		}
+
+
+		/// <summary>
+		/// changes the sekected Category (currently broken and selecting tabs is somehow currently not possible?)
+		/// </summary>
+		/// <param name="step"></param>
+		private static void updateCategories(EnumCollection.ScrollDirection direction)
+		{
+			Debugger.log("updateCategories");
+			if (_currentScrollPanel != EnumCollection.PanelToScroll.NONE)
+			{
+				_filterByFunction = PartCategorizer.Instance.filters.Find(filter => filter.button.categoryName == "Filter by Function");
+				if (_filterByFunction.button.activeButton.State == RUIToggleButtonTyped.ButtonState.TRUE)
+				{
+					switch (direction)
+					{
+						case EnumCollection.ScrollDirection.POSTITIVE:
+							{
+								_currentCategoryIndex = Helpers.LimitIndex(_currentCategoryIndex++, 0, (Constants.editorCategories.Length - 1));
+								setPartCategory(_currentCategoryIndex);
+							}
+							break;
+						case EnumCollection.ScrollDirection.NEGATIVE:
+							{
+								_currentCategoryIndex = Helpers.LimitIndex(_currentCategoryIndex--, 0, (Constants.editorCategories.Length - 1));
+								setPartCategory(_currentCategoryIndex);
+							}
+							break;
+					}
+				}
+			}
+		}
+
+
+		/// <summary>
+		/// sets the Panel
+		/// </summary>
+		/// <param name="index"></param>
+		private static void setPartCategory(int index)
+		{
+			Debugger.log("setPartCategory");
+			switch (Constants.editorCategories[index])
+			{
+				case PartCategories.Pods:
+					{
+						PartCategorizer.SetPanel_FunctionPods();
+					}
+					break;
+				case PartCategories.FuelTank:
+					{
+						PartCategorizer.SetPanel_FunctionFuelTank();
+					}
+					break;
+				case PartCategories.Engine:
+					{
+						PartCategorizer.SetPanel_FunctionEngine();
+					}
+					break;
+				case PartCategories.Control:
+					{
+						PartCategorizer.SetPanel_FunctionControl();
+					}
+					break;
+				case PartCategories.Structural:
+					{
+						PartCategorizer.SetPanel_FunctionStructural();
+					}
+					break;
+				case PartCategories.Aero:
+					{
+						PartCategorizer.SetPanel_FunctionAero();
+					}
+					break;
+				case PartCategories.Utility:
+					{
+						PartCategorizer.SetPanel_FunctionUtility();
+					}
+					break;
+				case PartCategories.Science:
+					{
+						PartCategorizer.SetPanel_FunctionScience();
+					}
+					break;
+			}
+		}
+
+
 	}
 }
