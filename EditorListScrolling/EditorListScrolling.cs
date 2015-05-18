@@ -154,7 +154,7 @@ namespace EditorListScrolling
 									if (_editorScrollRectAdvanced[0].Contains(_currentMousePos))
 									{
 										_currentScrollPanel = EnumCollection.PanelToScroll.FILTER;
-										UpdateFilters(mouseDirection); //broken
+										UpdateFilters(mouseDirection); //works almost
 									}
 									else if (_editorScrollRectAdvanced[1].Contains(_currentMousePos))
 									{
@@ -239,28 +239,45 @@ namespace EditorListScrolling
 		private static void UpdateFilters(EnumCollection.ScrollDirection direction)
 		{
 			Debugger.log("UpdateFilters");
+			foreach (PartCategorizer.Category filter in PartCategorizer.Instance.filters)
+			{
+				Debugger.log(" ! " + filter.button.categoryName+" - "+filter.button.activeButton.State);
+			}
+
 			if (_currentScrollPanel != EnumCollection.PanelToScroll.NONE)
 			{
 				switch (direction)
 				{
 					case EnumCollection.ScrollDirection.POSTITIVE:
 						{
-							foreach (PartCategorizer.Category filter in PartCategorizer.Instance.filters)
-							{
-								Debugger.log("postivie Filter = " + filter.button.categoryName);
-							}
+							_currentCategoryIndex++;
+							_currentCategoryIndex = Helpers.LoopIndex(_currentCategoryIndex, 0, (PartCategorizer.Instance.filters.Count - 1));
+							setPartFilter(_currentCategoryIndex);
 						}
 						break;
 					case EnumCollection.ScrollDirection.NEGATIVE:
 						{
-							foreach (PartCategorizer.Category filter in PartCategorizer.Instance.filters)
-							{
-								Debugger.log("negative Filter = " + filter.button.categoryName);
-							}
+							_currentCategoryIndex--;
+							_currentCategoryIndex = Helpers.LoopIndex(_currentCategoryIndex, 0, (PartCategorizer.Instance.filters.Count - 1));
+							setPartFilter(_currentCategoryIndex);
 						}
 						break;
 				}
 			}
+		}
+
+
+		/// <summary>
+		/// marks the filter as set based on the provided index
+		/// </summary>
+		/// <param name="index"></param>
+		private static void setPartFilter(int index)
+		{
+			foreach (PartCategorizer.Category filter in PartCategorizer.Instance.filters)
+			{
+				filter.button.activeButton.SetFalse(filter.button.activeButton, RUIToggleButtonTyped.ClickType.LEFT);
+			}
+			PartCategorizer.Instance.filters[_currentCategoryIndex].button.activeButton.SetTrue(PartCategorizer.Instance.filters[_currentCategoryIndex].button.activeButton, RUIToggleButtonTyped.ClickType.LEFT);
 		}
 
 
