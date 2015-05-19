@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace EditorListScrolling
 {
@@ -11,10 +12,9 @@ namespace EditorListScrolling
 		private static bool _invertMouseWheel = Constants.defaultInvertMouseWheel;
 		private static float _mouseWheelSensitivity = Constants.defaultMouseWheelSensitivity;
 		private static float _summedMouseScroll = 0;
-		private static int _currentCategoryIndex = 0;
+		private static int _categoryIndex = 0;
+		private static int _filterIndex = 0;
 		private static EditorListScrollingConfiguration _config;
-		private static EditorLogic.EditorModes _editorMode;
-		private static PartCategorizer.Category _filterByFunction;
 
 		private static Rect[] _editorScrollRectSimple =
 		{
@@ -65,6 +65,7 @@ namespace EditorListScrolling
 		/// </summary>
 		private void Awake()
 		{
+			Debugger.log("Awake", true);
 			Instance = this;
 			if (System.IO.File.Exists(string.Concat(Constants.runtimeDirectory, Constants.xmlFilePath, Constants.configFileName)))
 			{
@@ -74,13 +75,10 @@ namespace EditorListScrolling
 			{
 				if (_config == null)
 				{
-					_config = new EditorListScrollingConfiguration();
-					_config.invertMouseWheel = Constants.defaultInvertMouseWheel;
-					_config.mouseWheelSensitivity = Constants.defaultMouseWheelSensitivity;
+					_config = EditorListScrollingConfigurationManager.generateDefaultConfig();
+					EditorListScrollingConfigurationManager.SaveConfig(_config);
 				}
-				EditorListScrollingConfigurationManager.SaveConfig(_config);
 			}
-			_filterByFunction = PartCategorizer.Instance.filters.Find(filter => filter.button.categoryName == "Filter by Function");
 		}
 
 
@@ -89,29 +87,10 @@ namespace EditorListScrolling
 		/// </summary>
 		private void Update()
 		{
-			_editorMode = EditorLogic.Mode;
 			ManageEditorScrollingSection();
-			setEditorMode();
-		}
-
-
-		/// <summary>
-		/// sets the Editor to the Mode that was used at the Frame begin.
-		/// </summary>
-		private void setEditorMode()
-		{
-			switch (_editorMode)
+			if (Input.GetKeyUp(KeyCode.Return))
 			{
-				case EditorLogic.EditorModes.ADVANCED:
-					{
-						PartCategorizer.Instance.SetAdvancedMode();
-					}
-					break;
-				case EditorLogic.EditorModes.SIMPLE:
-					{
-						PartCategorizer.Instance.SetSimpleMode();
-					}
-					break;
+				pureDebug();
 			}
 		}
 
@@ -136,12 +115,10 @@ namespace EditorListScrolling
 									if (_editorScrollRectSimple[0].Contains(_currentMousePos))
 									{
 										_currentScrollPanel = EnumCollection.PanelToScroll.CATEGORY;
-										updateCategories(mouseDirection); //broken
 									}
 									else if (_editorScrollRectSimple[1].Contains(_currentMousePos))
 									{
 										_currentScrollPanel = EnumCollection.PanelToScroll.PARTS;
-										updatePartList(mouseDirection);
 									}
 									else
 									{
@@ -154,17 +131,14 @@ namespace EditorListScrolling
 									if (_editorScrollRectAdvanced[0].Contains(_currentMousePos))
 									{
 										_currentScrollPanel = EnumCollection.PanelToScroll.FILTER;
-										UpdateFilters(mouseDirection); //works almost
 									}
 									else if (_editorScrollRectAdvanced[1].Contains(_currentMousePos))
 									{
 										_currentScrollPanel = EnumCollection.PanelToScroll.CATEGORY;
-										updateCategories(mouseDirection); //broken
 									}
 									else if (_editorScrollRectAdvanced[2].Contains(_currentMousePos))
 									{
 										_currentScrollPanel = EnumCollection.PanelToScroll.PARTS;
-										updatePartList(mouseDirection);
 									}
 									else
 									{
@@ -173,6 +147,7 @@ namespace EditorListScrolling
 								}
 								break;
 						}
+						updateFiltering(mouseDirection);
 					}
 				}
 				else
@@ -207,14 +182,60 @@ namespace EditorListScrolling
 		}
 
 
-		/// <summary>
-		/// analysis the mousescrolling and sets the pages
-		/// </summary>
-		/// <param name="enabled"></param>
-		private static void updatePartList(EnumCollection.ScrollDirection direction)
+		private static int getActiveListIndex(List<PartCategorizer.Category> activeList)
 		{
-			Debugger.log("updatePartList");
-			if (_currentScrollPanel != EnumCollection.PanelToScroll.NONE)
+			Debugger.log("getActiveListIndex", _config.advancedDebugging);
+			foreach (PartCategorizer.Category entry in activeList)
+			{
+				if (entry.button.activeButton.State == RUIToggleButtonTyped.ButtonState.TRUE)
+				{
+					return activeList.FindIndex(activeEntry => activeEntry.button.categoryName == entry.button.categoryName);
+				}
+			}
+			return -1;
+		}
+
+
+		/// <summary>
+		/// changes the sekected Category (currently broken and selecting tabs is somehow currently not possible?)
+		/// </summary>
+		/// <param name="step"></param>
+		private static void updateFiltering(EnumCollection.ScrollDirection direction)
+		{
+			Debugger.log("updateFiltering", _config.advancedDebugging);
+			if (_currentScrollPanel == EnumCollection.PanelToScroll.CATEGORY)
+			{
+				switch (direction)
+				{
+					case EnumCollection.ScrollDirection.POSTITIVE:
+						{
+							changeFilter(1, PartCategorizer.Instance.filters[getActiveListIndex(PartCategorizer.Instance.filters)].subcategories, _categoryIndex);
+						}
+						break;
+					case EnumCollection.ScrollDirection.NEGATIVE:
+						{
+							changeFilter(-1, PartCategorizer.Instance.filters[getActiveListIndex(PartCategorizer.Instance.filters)].subcategories, _categoryIndex);
+						}
+						break;
+				}
+			}
+			else if (_currentScrollPanel == EnumCollection.PanelToScroll.FILTER)
+			{
+				switch (direction)
+				{
+					case EnumCollection.ScrollDirection.POSTITIVE:
+						{
+							changeFilter(1, PartCategorizer.Instance.filters, _filterIndex);
+						}
+						break;
+					case EnumCollection.ScrollDirection.NEGATIVE:
+						{
+							changeFilter(-1, PartCategorizer.Instance.filters, _filterIndex);
+						}
+						break;
+				}
+			}
+			else if (_currentScrollPanel == EnumCollection.PanelToScroll.PARTS)
 			{
 				switch (direction)
 				{
@@ -233,138 +254,30 @@ namespace EditorListScrolling
 		}
 
 
-		/// <summary>
-		/// changes the filter based on scroll direction
-		/// </summary>
-		private static void UpdateFilters(EnumCollection.ScrollDirection direction)
+		private static void changeFilter(int step, List<PartCategorizer.Category> filteringList, int listIndex)
 		{
-			Debugger.log("UpdateFilters");
+			Debugger.log("changeFilter", _config.advancedDebugging);
+			var index = getActiveListIndex(filteringList);
+			listIndex = index + step;
+			listIndex = Helpers.LoopIndex(listIndex, 0, (filteringList.Count - 1));
+			filteringList[listIndex].button.activeButton.SetTrue(filteringList[listIndex].button.activeButton, RUIToggleButtonTyped.ClickType.LEFT);
+		}
+
+
+		/// <summary>
+		/// as the name says this only throws out the state and name for every filter and category at once
+		/// </summary>
+		private static void pureDebug()
+		{
+			Debugger.log("pureDebug", true);
 			foreach (PartCategorizer.Category filter in PartCategorizer.Instance.filters)
 			{
-				Debugger.log(" ! " + filter.button.categoryName+" - "+filter.button.activeButton.State);
-			}
-
-			if (_currentScrollPanel != EnumCollection.PanelToScroll.NONE)
-			{
-				switch (direction)
+				foreach (PartCategorizer.Category category in filter.subcategories)
 				{
-					case EnumCollection.ScrollDirection.POSTITIVE:
-						{
-							_currentCategoryIndex++;
-							_currentCategoryIndex = Helpers.LoopIndex(_currentCategoryIndex, 0, (PartCategorizer.Instance.filters.Count - 1));
-							setPartFilter(_currentCategoryIndex);
-						}
-						break;
-					case EnumCollection.ScrollDirection.NEGATIVE:
-						{
-							_currentCategoryIndex--;
-							_currentCategoryIndex = Helpers.LoopIndex(_currentCategoryIndex, 0, (PartCategorizer.Instance.filters.Count - 1));
-							setPartFilter(_currentCategoryIndex);
-						}
-						break;
+					Debugger.log(filter.button.categoryName + " - " + filter.button.activeButton.State+" | "+category.button.categoryName+" - "+category.button.activeButton.State, true);
 				}
 			}
 		}
-
-
-		/// <summary>
-		/// marks the filter as set based on the provided index
-		/// </summary>
-		/// <param name="index"></param>
-		private static void setPartFilter(int index)
-		{
-			foreach (PartCategorizer.Category filter in PartCategorizer.Instance.filters)
-			{
-				filter.button.activeButton.SetFalse(filter.button.activeButton, RUIToggleButtonTyped.ClickType.LEFT);
-			}
-			PartCategorizer.Instance.filters[_currentCategoryIndex].button.activeButton.SetTrue(PartCategorizer.Instance.filters[_currentCategoryIndex].button.activeButton, RUIToggleButtonTyped.ClickType.LEFT);
-		}
-
-
-		/// <summary>
-		/// changes the sekected Category (currently broken and selecting tabs is somehow currently not possible?)
-		/// </summary>
-		/// <param name="step"></param>
-		private static void updateCategories(EnumCollection.ScrollDirection direction)
-		{
-			Debugger.log("updateCategories");
-			if (_currentScrollPanel != EnumCollection.PanelToScroll.NONE)
-			{
-				_filterByFunction = PartCategorizer.Instance.filters.Find(filter => filter.button.categoryName == "Filter by Function");
-				if (_filterByFunction.button.activeButton.State == RUIToggleButtonTyped.ButtonState.TRUE)
-				{
-					switch (direction)
-					{
-						case EnumCollection.ScrollDirection.POSTITIVE:
-							{
-								_currentCategoryIndex = Helpers.LimitIndex(_currentCategoryIndex++, 0, (Constants.editorCategories.Length - 1));
-								setPartCategory(_currentCategoryIndex);
-							}
-							break;
-						case EnumCollection.ScrollDirection.NEGATIVE:
-							{
-								_currentCategoryIndex = Helpers.LimitIndex(_currentCategoryIndex--, 0, (Constants.editorCategories.Length - 1));
-								setPartCategory(_currentCategoryIndex);
-							}
-							break;
-					}
-				}
-			}
-		}
-
-
-		/// <summary>
-		/// sets the Panel
-		/// </summary>
-		/// <param name="index"></param>
-		private static void setPartCategory(int index)
-		{
-			Debugger.log("setPartCategory");
-			switch (Constants.editorCategories[index])
-			{
-				case PartCategories.Pods:
-					{
-						PartCategorizer.SetPanel_FunctionPods();
-					}
-					break;
-				case PartCategories.FuelTank:
-					{
-						PartCategorizer.SetPanel_FunctionFuelTank();
-					}
-					break;
-				case PartCategories.Engine:
-					{
-						PartCategorizer.SetPanel_FunctionEngine();
-					}
-					break;
-				case PartCategories.Control:
-					{
-						PartCategorizer.SetPanel_FunctionControl();
-					}
-					break;
-				case PartCategories.Structural:
-					{
-						PartCategorizer.SetPanel_FunctionStructural();
-					}
-					break;
-				case PartCategories.Aero:
-					{
-						PartCategorizer.SetPanel_FunctionAero();
-					}
-					break;
-				case PartCategories.Utility:
-					{
-						PartCategorizer.SetPanel_FunctionUtility();
-					}
-					break;
-				case PartCategories.Science:
-					{
-						PartCategorizer.SetPanel_FunctionScience();
-					}
-					break;
-			}
-		}
-
 
 	}
 }

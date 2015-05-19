@@ -10,8 +10,13 @@ namespace EditorListScrolling
 
 		public static readonly string debugPrefix = "[EditorListScrolling]";
 
-		public static readonly float defaultMouseWheelSensitivity = 0.1f;
 		public static readonly bool defaultInvertMouseWheel = false;
+		public static readonly float defaultMouseWheelSensitivity = 0.1f;
+		public static readonly bool defaultAdvancedDebugging = false;
+
+		public static readonly string configMouseWheelSensitivityIdentifier = "MouseWheelSensitivity";
+		public static readonly string configInvertMouseWheelIdentifier = "InvertMouseWheel";
+		public static readonly string configAdvancedDebuggingIdentifier = "AdvancedDebugging";
 
 		public static readonly int editorTopOffset = 26;
 		public static readonly int editorBottomOffset = 73;

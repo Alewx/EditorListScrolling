@@ -5,5 +5,6 @@ namespace EditorListScrolling
 	{
 		public bool invertMouseWheel;
 		public float mouseWheelSensitivity;
+		public bool advancedDebugging;
 	}
 }
