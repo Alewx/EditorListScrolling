@@ -9,10 +9,10 @@ namespace EditorListScrolling
 	{
 		public enum PanelToScroll
 		{
-			NONE,
-			FILTER,
+			PARTS,
 			CATEGORY,
-			PARTS
+			FILTER,
+			NONE
 		}
 
 		public enum ScrollDirection

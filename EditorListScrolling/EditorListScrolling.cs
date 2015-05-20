@@ -9,8 +9,6 @@ namespace EditorListScrolling
 		public static EditorListScrolling Instance { get; private set; }
 		private static EnumCollection.PanelToScroll _currentScrollPanel;
 		private static Vector2 _currentMousePos;
-		private static bool _invertMouseWheel = Constants.defaultInvertMouseWheel;
-		private static float _mouseWheelSensitivity = Constants.defaultMouseWheelSensitivity;
 		private static float _summedMouseScroll = 0;
 		private static int _categoryIndex = 0;
 		private static int _filterIndex = 0;
@@ -18,29 +16,29 @@ namespace EditorListScrolling
 
 		private static Rect[] _editorScrollRectSimple =
 		{
-			new Rect(Constants.simpleEditorCategoryX,
-				Constants.editorTopOffset,
-				Constants.simpleEditorCategoryWidth,
-				Screen.height - Constants.editorTopOffset - Constants.editorBottomOffset),
 			new Rect(Constants.simpleEditorPartsX,
 				Constants.editorTopOffset,
 				Constants.simpleEditorPartsWidth,
+				Screen.height - Constants.editorTopOffset - Constants.editorBottomOffset),
+			new Rect(Constants.simpleEditorCategoryX,
+				Constants.editorTopOffset,
+				Constants.simpleEditorCategoryWidth,
 				Screen.height - Constants.editorTopOffset - Constants.editorBottomOffset)
 		};
 
 		private static Rect[] _editorScrollRectAdvanced = 
 		{
-			new Rect(Constants.advancedEditorFilterX,
+			new Rect(Constants.advancedEditorPartsX,
 				Constants.editorTopOffset,
-				Constants.advancedEditorFilterWidth,
+				Constants.advancedEditorPartsWidth,
 				Screen.height - Constants.editorTopOffset - Constants.editorBottomOffset),
 			new Rect(Constants.advancedEditorCategoryX,
 				Constants.editorTopOffset,
 				Constants.advancedEditorCategoryWidth,
 				Screen.height - Constants.editorTopOffset - Constants.editorBottomOffset),
-			new Rect(Constants.advancedEditorPartsX,
+			new Rect(Constants.advancedEditorFilterX,
 				Constants.editorTopOffset,
-				Constants.advancedEditorPartsWidth,
+				Constants.advancedEditorFilterWidth,
 				Screen.height - Constants.editorTopOffset - Constants.editorBottomOffset)
 		};
 
@@ -67,7 +65,7 @@ namespace EditorListScrolling
 		{
 			Debugger.log("Awake", true);
 			Instance = this;
-			if (System.IO.File.Exists(string.Concat(Constants.runtimeDirectory, Constants.xmlFilePath, Constants.configFileName)))
+			if (System.IO.File.Exists(string.Concat(Constants.runtimeDirectory, "/", Constants.configFileName)))
 			{
 				_config = EditorListScrollingConfigurationManager.LoadConfig();
 			}
@@ -108,56 +106,33 @@ namespace EditorListScrolling
 					var mouseDirection = getScrollDirection();
 					if (mouseDirection != EnumCollection.ScrollDirection.NONE)
 					{
-						switch (EditorLogic.Mode)
+						_currentScrollPanel = EditorLogic.Mode == EditorLogic.EditorModes.SIMPLE ? (EnumCollection.PanelToScroll)getHoveredScrollPanel(_editorScrollRectSimple, _currentMousePos) : (EnumCollection.PanelToScroll)getHoveredScrollPanel(_editorScrollRectAdvanced, _currentMousePos);
+						if (_currentScrollPanel != EnumCollection.PanelToScroll.NONE)
 						{
-							case EditorLogic.EditorModes.SIMPLE:
-								{
-									if (_editorScrollRectSimple[0].Contains(_currentMousePos))
-									{
-										_currentScrollPanel = EnumCollection.PanelToScroll.CATEGORY;
-									}
-									else if (_editorScrollRectSimple[1].Contains(_currentMousePos))
-									{
-										_currentScrollPanel = EnumCollection.PanelToScroll.PARTS;
-									}
-									else
-									{
-										_currentScrollPanel = EnumCollection.PanelToScroll.NONE;
-									}
-								}
-								break;
-							case EditorLogic.EditorModes.ADVANCED:
-								{
-									if (_editorScrollRectAdvanced[0].Contains(_currentMousePos))
-									{
-										_currentScrollPanel = EnumCollection.PanelToScroll.FILTER;
-									}
-									else if (_editorScrollRectAdvanced[1].Contains(_currentMousePos))
-									{
-										_currentScrollPanel = EnumCollection.PanelToScroll.CATEGORY;
-									}
-									else if (_editorScrollRectAdvanced[2].Contains(_currentMousePos))
-									{
-										_currentScrollPanel = EnumCollection.PanelToScroll.PARTS;
-									}
-									else
-									{
-										_currentScrollPanel = EnumCollection.PanelToScroll.NONE;
-									}
-								}
-								break;
+							updateFiltering(mouseDirection);
 						}
-						updateFiltering(mouseDirection);
-					}
-				}
-				else
-				{
-					if (_currentScrollPanel != EnumCollection.PanelToScroll.NONE)
-					{
-						_currentScrollPanel = EnumCollection.PanelToScroll.NONE;
 					}
 				}
 			}
+		}
+
+
+		/// <summary>
+		/// returns the index of the enum fitting to the currently hovered Scrollpanel
+		/// </summary>
+		/// <param name="panels"></param>
+		/// <param name="mousePosition"></param>
+		/// <returns></returns>
+		public static int getHoveredScrollPanel(Rect[] panels, Vector2 mousePosition)
+		{
+			for (int i = 0; i < panels.Length; i++)
+			{
+				if (panels[i].Contains(mousePosition))
+				{
+					return i;
+				}
+			}
+			return (int)EnumCollection.PanelToScroll.NONE;
 		}
 
 
@@ -167,13 +142,14 @@ namespace EditorListScrolling
 		/// <returns></returns>
 		private static EnumCollection.ScrollDirection getScrollDirection()
 		{
-			_summedMouseScroll += Input.GetAxis("Mouse ScrollWheel");
-			if (_invertMouseWheel ? _summedMouseScroll < (1 * (-_mouseWheelSensitivity)) : _summedMouseScroll > (1 * _mouseWheelSensitivity))
+			_summedMouseScroll += Input.GetAxis("Mouse ScrollWheel") * 10 * _config.mouseWheelSensitivity;
+			Debugger.log("getScrollDirection  _summedMouseScroll = " + _summedMouseScroll, true);
+			if (_config.invertMouseWheel ? _summedMouseScroll <= -1 : _summedMouseScroll >= 1)
 			{
 				_summedMouseScroll = 0;
 				return EnumCollection.ScrollDirection.NEGATIVE;
 			}
-			if (_invertMouseWheel ? _summedMouseScroll > (1 * _mouseWheelSensitivity) : _summedMouseScroll < (1 * (-_mouseWheelSensitivity)))
+			if (_config.invertMouseWheel ? _summedMouseScroll >= 1 : _summedMouseScroll <= -1)
 			{
 				_summedMouseScroll = 0;
 				return EnumCollection.ScrollDirection.POSTITIVE;
@@ -182,6 +158,11 @@ namespace EditorListScrolling
 		}
 
 
+		/// <summary>
+		/// provides the Index of the active entry in the list
+		/// </summary>
+		/// <param name="activeList"></param>
+		/// <returns></returns>
 		private static int getActiveListIndex(List<PartCategorizer.Category> activeList)
 		{
 			Debugger.log("getActiveListIndex", _config.advancedDebugging);
@@ -205,60 +186,37 @@ namespace EditorListScrolling
 			Debugger.log("updateFiltering", _config.advancedDebugging);
 			if (_currentScrollPanel == EnumCollection.PanelToScroll.CATEGORY)
 			{
-				switch (direction)
-				{
-					case EnumCollection.ScrollDirection.POSTITIVE:
-						{
-							changeFilter(1, PartCategorizer.Instance.filters[getActiveListIndex(PartCategorizer.Instance.filters)].subcategories, _categoryIndex);
-						}
-						break;
-					case EnumCollection.ScrollDirection.NEGATIVE:
-						{
-							changeFilter(-1, PartCategorizer.Instance.filters[getActiveListIndex(PartCategorizer.Instance.filters)].subcategories, _categoryIndex);
-						}
-						break;
-				}
+				changeFilter(direction, PartCategorizer.Instance.filters[getActiveListIndex(PartCategorizer.Instance.filters)].subcategories, _categoryIndex);
 			}
 			else if (_currentScrollPanel == EnumCollection.PanelToScroll.FILTER)
 			{
-				switch (direction)
-				{
-					case EnumCollection.ScrollDirection.POSTITIVE:
-						{
-							changeFilter(1, PartCategorizer.Instance.filters, _filterIndex);
-						}
-						break;
-					case EnumCollection.ScrollDirection.NEGATIVE:
-						{
-							changeFilter(-1, PartCategorizer.Instance.filters, _filterIndex);
-						}
-						break;
-				}
+				changeFilter(direction, PartCategorizer.Instance.filters, _filterIndex);
 			}
 			else if (_currentScrollPanel == EnumCollection.PanelToScroll.PARTS)
 			{
-				switch (direction)
+				if (direction == EnumCollection.ScrollDirection.POSTITIVE)
 				{
-					case EnumCollection.ScrollDirection.POSTITIVE:
-						{
-							EditorPartList.Instance.NextPage();
-						}
-						break;
-					case EnumCollection.ScrollDirection.NEGATIVE:
-						{
-							EditorPartList.Instance.PrevPage();
-						}
-						break;
+					EditorPartList.Instance.NextPage();
+				}
+				else
+				{
+					EditorPartList.Instance.PrevPage();
 				}
 			}
 		}
 
 
-		private static void changeFilter(int step, List<PartCategorizer.Category> filteringList, int listIndex)
+		/// <summary>
+		/// selects the filter based on the scrolling direction
+		/// </summary>
+		/// <param name="direction"></param>
+		/// <param name="filteringList"></param>
+		/// <param name="listIndex"></param>
+		private static void changeFilter(EnumCollection.ScrollDirection direction, List<PartCategorizer.Category> filteringList, int listIndex)
 		{
 			Debugger.log("changeFilter", _config.advancedDebugging);
 			var index = getActiveListIndex(filteringList);
-			listIndex = index + step;
+			listIndex = direction == EnumCollection.ScrollDirection.POSTITIVE ? index + 1 : index - 1;
 			listIndex = Helpers.LoopIndex(listIndex, 0, (filteringList.Count - 1));
 			filteringList[listIndex].button.activeButton.SetTrue(filteringList[listIndex].button.activeButton, RUIToggleButtonTyped.ClickType.LEFT);
 		}
