@@ -86,10 +86,6 @@ namespace EditorListScrolling
 		private void Update()
 		{
 			ManageEditorScrollingSection();
-			if (Input.GetKeyUp(KeyCode.Return))
-			{
-				pureDebug();
-			}
 		}
 
 
