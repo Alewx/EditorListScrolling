@@ -245,10 +245,12 @@ namespace EditorListScrolling
 			if (_currentScrollPanel == EnumCollection.PanelToScroll.CATEGORY)
 			{
 				changeFilter(direction, _filters[getActiveListIndex(_filters)].subcategories, _categoryIndex);
+				PartCategorizer.Instance.scrollListSub.scrollList.ScrollListTo((1f / (_filters[getActiveListIndex(_filters)].subcategories.Count-1)) * getActiveListIndex(_filters[getActiveListIndex(_filters)].subcategories));
 			}
 			else if (_currentScrollPanel == EnumCollection.PanelToScroll.FILTER)
 			{
 				changeFilter(direction, _filters, _filterIndex);
+				PartCategorizer.Instance.scrollListMain.scrollList.ScrollListTo((1f / (_filters.Count - 1)) * getActiveListIndex(_filters));
 			}
 			else if (_currentScrollPanel == EnumCollection.PanelToScroll.PARTS)
 			{
