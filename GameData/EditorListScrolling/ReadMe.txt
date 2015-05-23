@@ -1,6 +1,9 @@
 EditorListScrolling
 
 
+Changes in 1.2:
+-fixed the strange visual scrolling of the categories and filters.
+
 Changes in 1.1:
 -works now with custom filters and subassemblies
 -fixed tooltips

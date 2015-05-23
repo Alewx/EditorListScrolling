@@ -5,7 +5,7 @@ namespace EditorListScrolling
 {
 	static class Constants
 	{
-		public static readonly string version = "1.1.0";
+		public static readonly string version = "1.2.0";
 		public static readonly string modname = "EditorListScrolling";
 
 		public static readonly string debugPrefix = "[EditorListScrolling]";
