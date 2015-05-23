@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using System.Xml;
 using System.Xml.Serialization;
 
 namespace EditorListScrolling
@@ -8,6 +11,12 @@ namespace EditorListScrolling
 	{
 
 		private static string _configFile = string.Concat(Constants.runtimeDirectory,"/", Constants.configFileName);
+
+		[AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
+		public class XmlCommentAttribute : Attribute
+		{
+			public string Value { get; set; }
+		}
 
 
 		/// <summary>
@@ -60,7 +69,7 @@ namespace EditorListScrolling
 			{
 				loadedConfig.mouseWheelSensitivity = 2;
 			}
-			Debugger.log("config loaded "+ loadedConfig.invertMouseWheel + " - " + loadedConfig.mouseWheelSensitivity + " - " + loadedConfig.advancedDebugging, true);
+			Debugger.log("config loaded = "+ loadedConfig.invertMouseWheel + " - " + loadedConfig.mouseWheelSensitivity + " - " + loadedConfig.advancedDebugging, true);
 			return loadedConfig;
 		}
 
@@ -71,9 +80,8 @@ namespace EditorListScrolling
 		public static void SaveConfig(EditorListScrollingConfiguration configToSave)
 		{
 			EditorListScrollingConfiguration config = (EditorListScrollingConfiguration)configToSave.clone();
-			TextWriter fileStreamWriter;
+			TextWriter fileStreamWriter = new StreamWriter(_configFile);
 			XmlSerializer configSerializer = new XmlSerializer(typeof(EditorListScrollingConfiguration));
-			fileStreamWriter = new StreamWriter(_configFile);
 			configSerializer.Serialize(fileStreamWriter, config);
 			fileStreamWriter.Close();
 			Debugger.log("config saved", true);
@@ -92,6 +100,5 @@ namespace EditorListScrolling
 			generatedDefaultConfig.advancedDebugging = Constants.defaultAdvancedDebugging;
 			return generatedDefaultConfig;
 		}
-
 	}
 }

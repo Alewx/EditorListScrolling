@@ -15,18 +15,21 @@ namespace EditorListScrolling
 		private float _mouseWheelSensitivity;
 		private bool _advancedDebugging;
 
+		[XmlElement(Namespace = Constants.descriptionInvertMouseWheel)]
 		public bool invertMouseWheel
 		{
 			get { return _invertMouseWheel; }
 			set { _invertMouseWheel = value; }
 		}
 
+		[XmlElement(Namespace = Constants.descriptionMouseWheelSensitivity)]
 		public float mouseWheelSensitivity
 		{
 			get { return _mouseWheelSensitivity; }
 			set { _mouseWheelSensitivity = value; }
 		}
 
+		[XmlElement(Namespace = Constants.descriptionAdvancedDebugging)]
 		public bool advancedDebugging
 		{
 			get { return _advancedDebugging; }
@@ -34,4 +37,5 @@ namespace EditorListScrolling
 		}
 
 	}
+
 }

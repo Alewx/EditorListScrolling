@@ -5,7 +5,7 @@ namespace EditorListScrolling
 {
 	static class Constants
 	{
-		public static readonly string version = "0.1.1";
+		public static readonly string version = "1.1.0";
 		public static readonly string modname = "EditorListScrolling";
 
 		public static readonly string debugPrefix = "[EditorListScrolling]";
@@ -13,6 +13,10 @@ namespace EditorListScrolling
 		public static readonly bool defaultInvertMouseWheel = false;
 		public static readonly float defaultMouseWheelSensitivity = 1.0f;
 		public static readonly bool defaultAdvancedDebugging = false;
+
+		public const string descriptionInvertMouseWheel = "bool, invertes the mousewheel direction";
+		public const string descriptionMouseWheelSensitivity = "float, ranges from 0.1 to 2, defines the sensitivity of the mousewheel";
+		public const string descriptionAdvancedDebugging = "bool, enables/disables the debug logging";
 
 		public static readonly int editorTopOffset = 26;
 		public static readonly int editorBottomOffset = 73;

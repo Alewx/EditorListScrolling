@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <EditorListScrollingConfig xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns="KSP-Forum">
-  <invertMouseWheel>false</invertMouseWheel>
-  <mouseWheelSensitivity>1</mouseWheelSensitivity>
-  <advancedDebugging>false</advancedDebugging>
+  <invertMouseWheel xmlns="bool, invertes the mousewheel direction">false</invertMouseWheel>
+  <mouseWheelSensitivity xmlns="float, ranges from 0.1 to 2, defines the sensitivity of the mousewheel">1</mouseWheelSensitivity>
+  <advancedDebugging xmlns="bool, enables/disables the debug logging">false</advancedDebugging>
 </EditorListScrollingConfig>

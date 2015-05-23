@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace EditorListScrolling
@@ -13,6 +15,8 @@ namespace EditorListScrolling
 		private static int _categoryIndex = 0;
 		private static int _filterIndex = 0;
 		private static EditorListScrollingConfiguration _config;
+		private static List<PartCategorizer.Category> _filters;
+		private static bool _initRunning = false;
 
 		private static Rect[] _editorScrollRectSimple =
 		{
@@ -77,6 +81,7 @@ namespace EditorListScrolling
 					EditorListScrollingConfigurationManager.SaveConfig(_config);
 				}
 			}
+			StartCoroutine(InitFilters());
 		}
 
 
@@ -85,7 +90,54 @@ namespace EditorListScrolling
 		/// </summary>
 		private void Update()
 		{
-			ManageEditorScrollingSection();
+			if (PartCategorizer.Instance != null && _filters != null)
+			{
+				adaptToFilterChanges();
+				ManageEditorScrollingSection();
+			}
+		}
+
+
+		/// <summary>
+		/// loads the filters into a list as soon as the Partcategorizer is ready
+		/// </summary>
+		/// <returns></returns>
+		private IEnumerator InitFilters()
+		{
+			if (!_initRunning)
+			{
+				_initRunning = true;
+				Debugger.log("InitFilters", _config.advancedDebugging);
+				while (PartCategorizer.Instance == null)
+				{
+					_initRunning = false;
+					Debugger.log("InitFilters aborted", _config.advancedDebugging);
+					yield return null;
+				}
+				while (!PartCategorizer.Ready)
+				{
+					_initRunning = false;
+					Debugger.log("InitFilters aborted", _config.advancedDebugging);
+					yield return null;
+				}
+				_filters = new List<PartCategorizer.Category>();
+				_filters.AddRange(PartCategorizer.Instance.filters);
+				_filters.AddRange(PartCategorizer.Instance.categories);
+				Debugger.log("InitFilters loaded", _config.advancedDebugging);
+				_initRunning = false;
+			}
+		}
+
+
+		/// <summary>
+		/// runs a simple compare of the list sizes to reload the Filters
+		/// </summary>
+		private void adaptToFilterChanges()
+		{
+			if (_filters.Count != (PartCategorizer.Instance.filters.Count + PartCategorizer.Instance.categories.Count))
+			{
+				StartCoroutine(InitFilters());
+			}
 		}
 
 
@@ -105,11 +157,22 @@ namespace EditorListScrolling
 						_currentScrollPanel = EditorLogic.Mode == EditorLogic.EditorModes.SIMPLE ? (EnumCollection.PanelToScroll)getHoveredScrollPanel(_editorScrollRectSimple, _currentMousePos) : (EnumCollection.PanelToScroll)getHoveredScrollPanel(_editorScrollRectAdvanced, _currentMousePos);
 						if (_currentScrollPanel != EnumCollection.PanelToScroll.NONE)
 						{
+							hideTooltips();
 							updateFiltering(mouseDirection);
 						}
 					}
 				}
 			}
+		}
+
+
+		/// <summary>
+		/// hides the tooltips to avoid strange moved panels
+		/// </summary>
+		private static void hideTooltips()
+		{
+			GameEvents.onTooltipDestroyRequested.Fire();
+			PartListTooltips.fetch.HideTooltip();
 		}
 
 
@@ -139,7 +202,6 @@ namespace EditorListScrolling
 		private static EnumCollection.ScrollDirection getScrollDirection()
 		{
 			_summedMouseScroll += Input.GetAxis("Mouse ScrollWheel") * 10 * _config.mouseWheelSensitivity;
-			Debugger.log("getScrollDirection  _summedMouseScroll = " + _summedMouseScroll, true);
 			if (_config.invertMouseWheel ? _summedMouseScroll <= -1 : _summedMouseScroll >= 1)
 			{
 				_summedMouseScroll = 0;
@@ -182,11 +244,11 @@ namespace EditorListScrolling
 			Debugger.log("updateFiltering", _config.advancedDebugging);
 			if (_currentScrollPanel == EnumCollection.PanelToScroll.CATEGORY)
 			{
-				changeFilter(direction, PartCategorizer.Instance.filters[getActiveListIndex(PartCategorizer.Instance.filters)].subcategories, _categoryIndex);
+				changeFilter(direction, _filters[getActiveListIndex(_filters)].subcategories, _categoryIndex);
 			}
 			else if (_currentScrollPanel == EnumCollection.PanelToScroll.FILTER)
 			{
-				changeFilter(direction, PartCategorizer.Instance.filters, _filterIndex);
+				changeFilter(direction, _filters, _filterIndex);
 			}
 			else if (_currentScrollPanel == EnumCollection.PanelToScroll.PARTS)
 			{
