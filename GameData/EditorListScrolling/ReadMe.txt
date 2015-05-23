@@ -1,6 +1,12 @@
 EditorListScrolling
 
 
+Changes in 1.1:
+-works now with custom filters and subassemblies
+-fixed tooltips
+-config now contains explanations of the settings
+
+
 Features 1.0:
 -enables scrolling via mousewheel in the partlist, filters and categories in the editor.
 -works with Stock Filters
@@ -8,14 +14,16 @@ Features 1.0:
 
 
 Knwon Issues:
--works not on Custom Filters or Subassemblies
+-None
 
 
 Sourcecode:
 https://github.com/Alewx/EditorListScrolling
 
 
-Special Thanks to Crzyrndm for pointing out the basics of the Filter selection to me.
+Special Thanks to
+-Crzyrndm for pointing out the basics of the Filter selection to me.
+-Malah for hinting me at the tooptips solution and custom filters.
 
 
 
